@@ -15,8 +15,17 @@ pendulum = "^3.0.0"
 strawberry-graphql = {extras = ["debug-server"], version = "^0.217.1"}
 rich = "^13.7.0"
 typer = "^0.9.0"
+poethepoet = "^0.24.4"
+redis = "^5.0.1"
+
+[tool.poe.tasks]
+pytest = "ptw --now --verbose --exitfirst ."
+server = "strawberry server flyps.graphql"
+export = "strawberry export-schema flyps.graphql:schema --output schema.graphql"
+
+[tool.pycodestyle]
+ignore = "E741"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
-
