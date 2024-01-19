@@ -1,18 +1,30 @@
 import strawberry
+from typing_extensions import cast
 
-from flyps.redis import del_one, new_id, put_one
+from flyps import db
+from flyps.model import UserTable
 from flyps.user.types import User
 
 
 @strawberry.type
 class UserMutation:
     @strawberry.mutation
-    async def create(self, age: int, name: str) -> User:
-        id = await new_id("user")
-        user = User(id=id, age=age, name=name)
-        await put_one("user", id, user)
-        return user
+    def create(self, age: int, name: str) -> User:
+        user_row = UserTable(
+            age=age,
+            name=name,
+        )
+        db.session.add(user_row)
+        db.session.commit()
+        return User(
+            id=cast(strawberry.ID, user_row.id),
+            age=user_row.age,
+            name=user_row.name,
+        )
 
     @strawberry.mutation
-    async def delete(self, id: strawberry.ID) -> None:
-        await del_one("user", id=id)
+    def delete(self, id: strawberry.ID) -> None:
+        query = db.session.query(UserTable)
+        query = query.where(UserTable.id == id)
+        query.delete()
+        db.session.commit()

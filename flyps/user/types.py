@@ -7,6 +7,8 @@ class User:
     age: int
     name: str
 
+    # files: List[File]
+
 
 @strawberry.type
 class Users:

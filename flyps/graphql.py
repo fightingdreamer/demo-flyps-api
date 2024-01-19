@@ -6,16 +6,12 @@ from flyps.user.query import UserQuery
 
 @strawberry.type
 class Query:
-    @strawberry.field
-    def user(self) -> UserQuery:
-        return UserQuery()
+    user: UserQuery = strawberry.field(resolver=UserQuery)
 
 
 @strawberry.type
 class Mutation:
-    @strawberry.field
-    def user(self) -> UserMutation:
-        return UserMutation()
+    user: UserMutation = strawberry.field(resolver=UserMutation)
 
 
 schema = strawberry.Schema(
