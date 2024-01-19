@@ -1,4 +1,5 @@
 import strawberry
+from sqlalchemy.exc import SQLAlchemyError
 from typing_extensions import cast
 
 from flyps import db
@@ -15,7 +16,11 @@ class UserMutation:
             name=name,
         )
         db.session.add(user_row)
-        db.session.commit()
+        try:
+            db.session.commit()
+        except SQLAlchemyError:
+            db.session.rollback()
+            # warn: raise error
         return User(
             id=cast(strawberry.ID, user_row.id),
             age=user_row.age,
@@ -27,4 +32,8 @@ class UserMutation:
         query = db.session.query(UserTable)
         query = query.where(UserTable.id == id)
         query.delete()
-        db.session.commit()
+        try:
+            db.session.commit()
+        except SQLAlchemyError:
+            db.session.rollback()
+            # warn: raise error
