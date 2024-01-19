@@ -27,6 +27,8 @@ pytest = "ptw --now --verbose --exitfirst ."
 server = "strawberry server flyps.graphql"
 export = "strawberry export-schema flyps.graphql:schema --output schema.graphql"
 psql15 = "podman run --rm -ti --env-file .env --name psql --publish 5432:5432 docker.io/library/postgres:15-alpine"
+on-dev.script = "flyps.api:dev()"
+on-prd.script = "flyps.api:prd()"
 
 [tool.pycodestyle]
 ignore = "E741"
