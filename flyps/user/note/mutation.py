@@ -95,5 +95,6 @@ class UserNoteMutation:
             db.session.commit()
         except SQLAlchemyError:
             db.session.rollback()
+            # warn: return global error from strawberry
 
         return UserNoteDeleted(id=id)

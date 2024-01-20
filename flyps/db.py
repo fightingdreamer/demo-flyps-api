@@ -1,6 +1,5 @@
 from os import environ
 
-import zstd
 from sqlalchemy import MetaData, create_engine
 from sqlalchemy.orm import DeclarativeBase, scoped_session, sessionmaker
 
@@ -27,21 +26,6 @@ def create_session_factory():
 
 def create_tables(base, engine):
     base.metadata.create_all(bind=engine)
-
-
-# ------------------------------------------------------------------------------
-
-
-def compress(value: bytes) -> bytes:
-    if not value:
-        return b""
-    return zstd.compress(value, 1)
-
-
-def decompress(value: bytes) -> bytes:
-    if not value:
-        return b""
-    return zstd.decompress(value)
 
 
 # ------------------------------------------------------------------------------

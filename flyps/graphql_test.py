@@ -219,7 +219,7 @@ def _db_note_id(title: str):
 
 def test_user_create(async_wait):
     user_id = _db_user_id("TestUser")
-    if user_id:
+    if user_id:  # pragma: no cover
         pytest.skip()
 
     data = async_wait(user_create(name="TestUser")).data
@@ -228,7 +228,7 @@ def test_user_create(async_wait):
 
 def test_user_create_error_already_exist(async_wait):
     user_id = _db_user_id("TestUser")
-    if not user_id:
+    if not user_id:  # pragma: no cover
         pytest.skip()
 
     data = async_wait(user_create(name="TestUser")).data
@@ -237,11 +237,11 @@ def test_user_create_error_already_exist(async_wait):
 
 def test_user_note_create(async_wait):
     user_id = _db_user_id("TestUser")
-    if not user_id:
+    if not user_id:  # pragma: no cover
         pytest.skip()
 
     note_id = _db_note_id("TestNote")
-    if note_id:
+    if note_id:  # pragma: no cover
         pytest.skip()
 
     data = async_wait(
@@ -252,11 +252,11 @@ def test_user_note_create(async_wait):
 
 def test_user_note_create_error_already_exist(async_wait):
     user_id = _db_user_id("TestUser")
-    if not user_id:
+    if not user_id:  # pragma: no cover
         pytest.skip()
 
     note_id = _db_note_id("TestNote")
-    if not note_id:
+    if not note_id:  # pragma: no cover
         pytest.skip()
 
     data = async_wait(
@@ -267,7 +267,7 @@ def test_user_note_create_error_already_exist(async_wait):
 
 def test_user_getall(async_wait):
     user_id = _db_user_id("TestUser")
-    if not user_id:
+    if not user_id:  # pragma: no cover
         pytest.skip()
 
     data = async_wait(user_getall()).data
@@ -276,7 +276,7 @@ def test_user_getall(async_wait):
 
 def test_user_getone(async_wait):
     user_id = _db_user_id("TestUser")
-    if not user_id:
+    if not user_id:  # pragma: no cover
         pytest.skip()
 
     data = async_wait(user_getone(id=user_id)).data
@@ -285,7 +285,7 @@ def test_user_getone(async_wait):
 
 def test_user_getone_error_not_exists(async_wait):
     user_id = _db_user_id("TestUser")
-    if not user_id:
+    if not user_id:  # pragma: no cover
         pytest.skip()
 
     data = async_wait(user_getone(id=-1)).data
@@ -295,11 +295,11 @@ def test_user_getone_error_not_exists(async_wait):
 
 def test_user_note_getall(async_wait):
     user_id = _db_user_id("TestUser")
-    if not user_id:
+    if not user_id:  # pragma: no cover
         pytest.skip()
 
     note_id = _db_note_id("TestNote")
-    if not note_id:
+    if not note_id:  # pragma: no cover
         pytest.skip()
 
     data = async_wait(user_note_getall(user_id=user_id)).data
@@ -308,7 +308,7 @@ def test_user_note_getall(async_wait):
 
 def test_user_note_getone(async_wait):
     note_id = _db_note_id("TestNote")
-    if not note_id:
+    if not note_id:  # pragma: no cover
         pytest.skip()
 
     data = async_wait(user_note_getone(id=note_id)).data
@@ -323,7 +323,7 @@ def test_user_note_getone_error_not_exists(async_wait):
 
 def test_user_note_delete(async_wait):
     note_id = _db_note_id("TestNote")
-    if not note_id:
+    if not note_id:  # pragma: no cover
         pytest.skip()
 
     data = async_wait(user_note_delete(id=note_id)).data
@@ -337,7 +337,7 @@ def test_user_note_delete_error_not_exists(async_wait):
 
 def test_user_delete(async_wait):
     user_id = _db_user_id("TestUser")
-    if not user_id:
+    if not user_id:  # pragma: no cover
         pytest.skip()
 
     data = async_wait(user_delete(id=user_id)).data

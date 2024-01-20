@@ -90,5 +90,6 @@ class UserMutation:
             db.session.commit()
         except SQLAlchemyError:
             db.session.rollback()
+            # warn: return global error from strawberry
 
         return UserDeleted(id=id)
