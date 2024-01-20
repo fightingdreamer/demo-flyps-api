@@ -1,11 +1,13 @@
 from typing import Annotated, cast
 
 import strawberry
+from loguru import logger
 from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
 from sqlalchemy.sql import and_, func
 from strawberry import ID
 
 from flyps import db
+from flyps.error import InternalError
 from flyps.model import UserNoteTable
 from flyps.user.note.types import UserNote, UserNoteNotExistsError
 
@@ -93,8 +95,9 @@ class UserNoteMutation:
 
         try:
             db.session.commit()
-        except SQLAlchemyError:
+        except SQLAlchemyError as e:
             db.session.rollback()
-            # warn: return global error from strawberry
+            logger.exception(e)
+            raise InternalError()
 
         return UserNoteDeleted(id=id)

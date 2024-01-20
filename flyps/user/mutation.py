@@ -1,11 +1,13 @@
 from typing import Annotated, cast
 
 import strawberry
+from loguru import logger
 from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
 from sqlalchemy.sql import func
 from strawberry import ID
 
 from flyps import db
+from flyps.error import InternalError
 from flyps.model import UserTable
 from flyps.user.types import User, UserNotExistsError
 
@@ -88,8 +90,9 @@ class UserMutation:
 
         try:
             db.session.commit()
-        except SQLAlchemyError:
+        except SQLAlchemyError as e:
             db.session.rollback()
-            # warn: return global error from strawberry
+            logger.exception(e)
+            raise InternalError()
 
         return UserDeleted(id=id)
