@@ -1,6 +1,7 @@
 from sqlalchemy import ForeignKey
 from sqlalchemy.dialects import postgresql
 from sqlalchemy.orm import Mapped, mapped_column, relationship
+from sqlalchemy.schema import UniqueConstraint
 
 from flyps import db
 
@@ -11,10 +12,9 @@ class UserTable(db.Base):
     __tablename__ = "user"
     id: Mapped[int] = mapped_column(postgresql.INTEGER, primary_key=True)
 
-    age: Mapped[int] = mapped_column(postgresql.SMALLINT, nullable=False)
-    name: Mapped[str] = mapped_column(postgresql.TEXT, nullable=False)
+    name: Mapped[str] = mapped_column(postgresql.TEXT, unique=True, nullable=False)
 
-    files: Mapped[list["FileTable"]] = relationship(
+    notes: Mapped[list["UserNoteTable"]] = relationship(
         back_populates="user",
         cascade="all, delete-orphan",
         uselist=True,
@@ -24,8 +24,9 @@ class UserTable(db.Base):
 # ------------------------------------------------------------------------------
 
 
-class FileTable(db.Base):
-    __tablename__ = "file"
+class UserNoteTable(db.Base):
+    __tablename__ = "user_note"
+    __table_args__ = (UniqueConstraint("user_id", "title"),)
     id: Mapped[int] = mapped_column(postgresql.INTEGER, primary_key=True)
 
     user_id: Mapped[int] = mapped_column(
@@ -33,22 +34,12 @@ class FileTable(db.Base):
         nullable=False,
     )
     user: Mapped["UserTable"] = relationship(
-        back_populates="files",
+        back_populates="notes",
         uselist=False,
     )
 
-    name: Mapped[str] = mapped_column(postgresql.TEXT, nullable=True)
-    data_zstd: Mapped[bytes] = mapped_column(
-        postgresql.BYTEA, nullable=False, default=b""
-    )
-
-    @property
-    def data(self):
-        return db.decompress(self.data_zstd).decode()
-
-    @data.setter
-    def data(self, value):
-        self.data_zstd = db.compress(value.encode())
+    title: Mapped[str] = mapped_column(postgresql.TEXT, nullable=False)
+    content: Mapped[str] = mapped_column(postgresql.TEXT, nullable=True, default="")
 
 
 db.create_tables(db.Base, db.engine)

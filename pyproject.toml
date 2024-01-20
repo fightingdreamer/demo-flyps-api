@@ -23,7 +23,7 @@ fastapi = "^0.109.0"
 psycopg2-binary = "^2.9.9"
 
 [tool.poe.tasks]
-pytest = "ptw --now --verbose --exitfirst ."
+pytest = "ptw --now --verbose ."
 server = "strawberry server flyps.graphql"
 export = "strawberry export-schema flyps.graphql:schema --output schema.graphql"
 psql15 = "podman run --rm -ti --env-file .env --name psql --publish 5432:5432 docker.io/library/postgres:15-alpine"

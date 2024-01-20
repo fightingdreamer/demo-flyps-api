@@ -1,39 +1,94 @@
+from typing import Annotated, cast
+
 import strawberry
-from sqlalchemy.exc import SQLAlchemyError
-from typing_extensions import cast
+from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
+from sqlalchemy.sql import func
+from strawberry import ID
 
 from flyps import db
 from flyps.model import UserTable
-from flyps.user.types import User
+from flyps.user.types import User, UserNotExistsError
+
+
+def get_alternative_user_name(name: str):
+    q = db.session.query(UserTable.name)
+    q = q.where(UserTable.name.startswith(name))
+    q = q.order_by(func.char_length(UserTable.name))
+    old_name = q.scalar()
+    if not old_name:
+        return name
+    return old_name + "_"
+
+
+@strawberry.type
+class UserCreated:
+    user: User
+
+
+@strawberry.type
+class UserNameAlreadyExistsError:
+    alternative_name: str
+
+
+UserCreateResponse = Annotated[
+    UserCreated | UserNameAlreadyExistsError,
+    strawberry.union("UserCreateResponse"),
+]
+
+
+@strawberry.type
+class UserDeleted:
+    id: ID
+
+
+UserDeleteResponse = Annotated[
+    UserDeleted | UserNotExistsError,
+    strawberry.union("UserDeleteResponse"),
+]
 
 
 @strawberry.type
 class UserMutation:
     @strawberry.mutation
-    def create(self, age: int, name: str) -> User:
-        user_row = UserTable(
-            age=age,
+    def create(self, name: str) -> UserCreateResponse:
+        user = UserTable(
             name=name,
         )
-        db.session.add(user_row)
+        db.session.add(user)
+
         try:
             db.session.commit()
-        except SQLAlchemyError:
+        except IntegrityError:
             db.session.rollback()
-            # warn: raise error
-        return User(
-            id=cast(strawberry.ID, user_row.id),
-            age=user_row.age,
-            name=user_row.name,
+
+            alternative_name = get_alternative_user_name(name)
+            return UserNameAlreadyExistsError(
+                alternative_name=alternative_name,
+            )
+
+        return UserCreated(
+            user=User(
+                id=cast(ID, user.id),
+                name=user.name,
+                notes=[],
+            )
         )
 
     @strawberry.mutation
-    def delete(self, id: strawberry.ID) -> None:
-        query = db.session.query(UserTable)
-        query = query.where(UserTable.id == id)
-        query.delete()
+    def delete(self, id: ID) -> UserDeleteResponse:
+        q = db.session.query(UserTable)
+        q = q.where(UserTable.id == id)
+
+        try:
+            user = q.one()
+        except NoResultFound:
+            return UserNotExistsError(id=id)
+
+        db.session.delete(user)
+
         try:
             db.session.commit()
         except SQLAlchemyError:
             db.session.rollback()
-            # warn: raise error
+
+        return UserDeleted(id=id)
