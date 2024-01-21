@@ -1,12 +1,12 @@
 from typing import Annotated, cast
 
 import strawberry
-from sqlalchemy.exc import NoResultFound
 from sqlalchemy.orm import joinedload
+from sqlalchemy.exc import InternalError, NoResultFound
 from strawberry import ID
 
-from flyps import db
 from flyps.model import UserNoteTable
+from flyps import db, error
 from flyps.user.note.types import UserNote, UserNoteNotExistsError, UserNotes
 
 UserNoteGetOneResponse = Annotated[
@@ -22,8 +22,14 @@ class UserNoteQuery:
         # warn: annotate schema in strawberry to make content optional
         q = db.session.query(UserNoteTable)
         q = q.options(joinedload(UserNoteTable.user))
+        # warn: raise exception when user_id is not int
         q = q.where(UserNoteTable.user_id == user_id)
-        notes = q.all()
+
+        try:
+            user = q.one()
+        except InternalError:
+            db.session.rollback()
+            raise error.InternalError()
 
         return UserNotes(
             notes=[
@@ -32,7 +38,7 @@ class UserNoteQuery:
                     title=note.title,
                     content=note.content,
                 )
-                for note in notes
+                for note in user.notes
             ]
         )
 
@@ -45,6 +51,9 @@ class UserNoteQuery:
             note = q.one()
         except NoResultFound:
             return UserNoteNotExistsError(id=id)
+        except InternalError:
+            db.session.rollback()
+            raise error.InternalError()
 
         return UserNote(
             id=cast(ID, note.id),

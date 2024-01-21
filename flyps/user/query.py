@@ -1,11 +1,11 @@
 from typing import Annotated, cast
 
 import strawberry
-from sqlalchemy.exc import NoResultFound
+from sqlalchemy.exc import InternalError, NoResultFound
 from sqlalchemy.orm import joinedload
 from strawberry import ID
 
-from flyps import db
+from flyps import db, error
 from flyps.model import UserTable
 from flyps.user.note.types import UserNote
 from flyps.user.types import User, UserNotExistsError, Users
@@ -23,7 +23,13 @@ class UserQuery:
         q = db.session.query(UserTable)
         # warn: annotate schema in strawberry to make notes excluded
         q = q.options(joinedload(UserTable.notes))
-        users = q.all()
+
+        try:
+            users = q.all()
+        except InternalError:
+            db.session.rollback()
+            raise error.InternalError()
+
         return Users(
             users=[
                 User(
@@ -47,12 +53,16 @@ class UserQuery:
         q = db.session.query(UserTable)
         # warn: annotate schema in strawberry to make notes optional
         q = q.options(joinedload(UserTable.notes))
+        # warn: raise exception when id is not int
         q = q.where(UserTable.id == id)
 
         try:
             user = q.one()
         except NoResultFound:
             return UserNotExistsError(id=id)
+        except InternalError:
+            db.session.rollback()
+            raise error.InternalError()
 
         return User(
             id=cast(ID, user.id),
