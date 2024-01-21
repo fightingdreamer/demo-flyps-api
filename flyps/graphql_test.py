@@ -139,10 +139,16 @@ async def user_note_getall(*, user_id: int):
         query GetAll($userId: ID!) {
             userNote {
                 getAll(userId: $userId) {
-                    notes {
+                    __typename
+                    ... on UserNotExistsError {
                         id
-                        title
-                        content
+                    }
+                    ... on UserNotes {
+                        notes {
+                            id
+                            title
+                            content
+                        }
                     }
                 }
             }
@@ -312,10 +318,6 @@ def test_user_getone(async_wait):
 
 @skip_db_not_test
 def test_user_getone_error_not_exists(async_wait):
-    user_id = _db_user_id("TestUser")
-    if not user_id:  # pragma: no cover
-        pytest.skip()
-
     data = async_wait(user_getone(id=-1)).data
     assert data is not None
     assert _v(data, "user.getOne.__typename") == "UserNotExistsError"
@@ -336,6 +338,12 @@ def test_user_note_getall(async_wait):
 
 
 @skip_db_not_test
+def test_user_note_getall_error_not_exists(async_wait):
+    data = async_wait(user_note_getall(user_id=-1)).data
+    assert _v(data, "userNote.getAll.__typename") == "UserNotExistsError"
+
+
+@skip_db_not_test
 def test_user_note_getone(async_wait):
     note_id = _db_note_id("TestNote")
     if not note_id:  # pragma: no cover
@@ -346,7 +354,7 @@ def test_user_note_getone(async_wait):
 
 
 @skip_db_not_test
-def test_user_note_getone_error_not_exists(async_wait):
+def test_user_note_getone_error_note_not_exists(async_wait):
     data = async_wait(user_note_getone(id=-1)).data
     assert data is not None
     assert _v(data, "userNote.getOne.__typename") == "UserNoteNotExistsError"
