@@ -2,6 +2,7 @@ from os import environ
 
 from sqlalchemy import MetaData, create_engine
 from sqlalchemy.orm import DeclarativeBase, scoped_session, sessionmaker
+from sqlalchemy_utils import create_database, database_exists, drop_database
 
 # ------------------------------------------------------------------------------
 
@@ -22,6 +23,20 @@ class Base(DeclarativeBase):
 
 def create_session_factory():
     return sessionmaker(autoflush=False, autocommit=False)
+
+
+def delete_database(engine, url: str):
+    if not database_exists(url):
+        return
+    drop_database(url)
+
+
+def ensure_database(engine, url: str):
+    if database_exists(url):
+        return
+    create_database(url)
+    with engine.connect() as connection:
+        connection.invalidate()
 
 
 def create_tables(base, engine):
@@ -48,3 +63,5 @@ session = scoped_session(Session)
 
 engine = create_engine(db_url, echo=db_echo)
 Session.configure(bind=engine)
+
+ensure_database(engine, db_url)

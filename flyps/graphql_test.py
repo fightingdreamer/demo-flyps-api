@@ -217,6 +217,28 @@ def _db_note_id(title: str):
     )
 
 
+skip_db_not_test = pytest.mark.skipif(
+    not db.db_name.endswith("-test"),
+    reason=f"'{db.db_name}' is not a test database",
+)
+
+
+@skip_db_not_test
+def test_delete_database():
+    db.delete_database(db.engine, db.db_url)
+
+
+@skip_db_not_test
+def test_ensure_database():
+    db.ensure_database(db.engine, db.db_url)
+
+
+@skip_db_not_test
+def test_create_tables():
+    db.create_tables(db.Base, db.engine)
+
+
+@skip_db_not_test
 def test_user_create(async_wait):
     user_id = _db_user_id("TestUser")
     if user_id:  # pragma: no cover
@@ -226,6 +248,7 @@ def test_user_create(async_wait):
     assert _v(data, "user.create.__typename") == "UserCreated"
 
 
+@skip_db_not_test
 def test_user_create_error_already_exist(async_wait):
     user_id = _db_user_id("TestUser")
     if not user_id:  # pragma: no cover
@@ -235,6 +258,7 @@ def test_user_create_error_already_exist(async_wait):
     assert _v(data, "user.create.__typename") == "UserNameAlreadyExistsError"
 
 
+@skip_db_not_test
 def test_user_note_create(async_wait):
     user_id = _db_user_id("TestUser")
     if not user_id:  # pragma: no cover
@@ -250,6 +274,7 @@ def test_user_note_create(async_wait):
     assert _v(data, "userNote.create.__typename") == "UserNoteCreated"
 
 
+@skip_db_not_test
 def test_user_note_create_error_already_exist(async_wait):
     user_id = _db_user_id("TestUser")
     if not user_id:  # pragma: no cover
@@ -265,6 +290,7 @@ def test_user_note_create_error_already_exist(async_wait):
     assert _v(data, "userNote.create.__typename") == "UserNoteTitleAlreadyExistsError"
 
 
+@skip_db_not_test
 def test_user_getall(async_wait):
     user_id = _db_user_id("TestUser")
     if not user_id:  # pragma: no cover
@@ -274,6 +300,7 @@ def test_user_getall(async_wait):
     assert _v(data, "user.getAll.users") != []
 
 
+@skip_db_not_test
 def test_user_getone(async_wait):
     user_id = _db_user_id("TestUser")
     if not user_id:  # pragma: no cover
@@ -283,6 +310,7 @@ def test_user_getone(async_wait):
     assert _v(data, "user.getOne.__typename") == "User"
 
 
+@skip_db_not_test
 def test_user_getone_error_not_exists(async_wait):
     user_id = _db_user_id("TestUser")
     if not user_id:  # pragma: no cover
@@ -293,6 +321,7 @@ def test_user_getone_error_not_exists(async_wait):
     assert _v(data, "user.getOne.__typename") == "UserNotExistsError"
 
 
+@skip_db_not_test
 def test_user_note_getall(async_wait):
     user_id = _db_user_id("TestUser")
     if not user_id:  # pragma: no cover
@@ -306,6 +335,7 @@ def test_user_note_getall(async_wait):
     assert _v(data, "userNote.getAll.notes") != []
 
 
+@skip_db_not_test
 def test_user_note_getone(async_wait):
     note_id = _db_note_id("TestNote")
     if not note_id:  # pragma: no cover
@@ -315,12 +345,14 @@ def test_user_note_getone(async_wait):
     assert _v(data, "userNote.getOne.__typename") == "UserNote"
 
 
+@skip_db_not_test
 def test_user_note_getone_error_not_exists(async_wait):
     data = async_wait(user_note_getone(id=-1)).data
     assert data is not None
     assert _v(data, "userNote.getOne.__typename") == "UserNoteNotExistsError"
 
 
+@skip_db_not_test
 def test_user_note_delete(async_wait):
     note_id = _db_note_id("TestNote")
     if not note_id:  # pragma: no cover
@@ -330,11 +362,13 @@ def test_user_note_delete(async_wait):
     assert _v(data, "userNote.delete.__typename") == "UserNoteDeleted"
 
 
+@skip_db_not_test
 def test_user_note_delete_error_not_exists(async_wait):
     data = async_wait(user_note_delete(id=-1)).data
     assert _v(data, "userNote.delete.__typename") == "UserNoteNotExistsError"
 
 
+@skip_db_not_test
 def test_user_delete(async_wait):
     user_id = _db_user_id("TestUser")
     if not user_id:  # pragma: no cover
@@ -344,6 +378,7 @@ def test_user_delete(async_wait):
     assert _v(data, "user.delete.__typename") == "UserDeleted"
 
 
+@skip_db_not_test
 def test_user_delete_error_not_exists(async_wait):
     data = async_wait(user_delete(id=-1)).data
     assert _v(data, "user.delete.__typename") == "UserNotExistsError"

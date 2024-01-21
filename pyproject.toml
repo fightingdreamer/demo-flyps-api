@@ -22,10 +22,11 @@ psycopg2-binary = "^2.9.9"
 
 [tool.poetry.group.dev.dependencies]
 pytest-cov = "^4.1.0"
+sqlalchemy-utils = "^0.41.1"
 
 [tool.poe.tasks]
-pytest = "pytest --verbose ."
-pytest-watch = "ptw --now --verbose ."
+pytest = "env POSTGRES_DB='flyps-test' pytest --verbose ."
+pytest-watch = "env POSTGRES_DB='flyps-test' ptw --now --verbose ."
 server = "strawberry server flyps.graphql"
 export = "strawberry export-schema flyps.graphql:schema --output schema.graphql"
 psql15 = "podman run --rm -ti --env-file .env --name psql --publish 5432:5432 docker.io/library/postgres:15-alpine"
