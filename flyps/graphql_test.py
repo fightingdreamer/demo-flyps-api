@@ -8,10 +8,52 @@ from flyps.util.operator import itempathgetter
 # ------------------------------------------------------------------------------
 
 
+async def get_users():
+    return await schema.execute(
+        """
+        query getUsers {
+            getUsers {
+                ... on Users {
+                    users {
+                        id
+                        name
+                    }
+                }
+            }
+        }
+        """,
+        variable_values={},
+    )
+
+
+async def get_user(*, id: int):
+    return await schema.execute(
+        """
+        query getUser($id: ID!) {
+            getUser(id: $id) {
+                __typename
+                ... on UserNotExistsError {
+                    id
+                }
+                ... on User {
+                    id
+                    name
+                    notes {
+                        id
+                        title
+                    }
+                }
+            }
+        }
+        """,
+        variable_values={"id": id},
+    )
+
+
 async def user_create(*, name: str):
     return await schema.execute(
         """
-        mutation Create($name: String!) {
+        mutation userCreate($name: String!) {
             user {
                 create(name: $name) {
                     __typename
@@ -34,63 +76,19 @@ async def user_create(*, name: str):
     )
 
 
-async def user_getall():
-    return await schema.execute(
-        """
-        query GetAll {
-            user {
-                getAll {
-                    users {
-                        id
-                        name
-                    }
-                }
-            }
-        }
-        """,
-        variable_values={},
-    )
-
-
-async def user_getone(*, id: int):
-    return await schema.execute(
-        """
-        query GetOne($id: ID!) {
-            user {
-                getOne(id: $id) {
-                    __typename
-                    ... on UserNotExistsError {
-                            id
-                        }
-                    ... on User {
-                            id
-                            name
-                            notes {
-                                id
-                                title
-                            }
-                        }
-                }
-            }
-        }
-        """,
-        variable_values={"id": id},
-    )
-
-
 async def user_delete(*, id: int):
     return await schema.execute(
         """
-        mutation Delete($id: ID!) {
+        mutation userDelete($id: ID!) {
             user {
                 delete(id: $id) {
                     __typename
                     ... on UserNotExistsError {
-                            id
-                        }
+                        id
+                    }
                     ... on UserDeleted {
-                            id
-                        }
+                        id
+                    }
                 }
             }
         }
@@ -104,21 +102,69 @@ async def user_delete(*, id: int):
 # ------------------------------------------------------------------------------
 
 
+async def get_user_notes(*, user_id: int):
+    return await schema.execute(
+        """
+        query getUserNotes($userId: ID!) {
+            getUserNotes(userId: $userId) {
+                __typename
+                ... on UserNotExistsError {
+                    id
+                }
+                ... on UserNotes {
+                    notes {
+                        id
+                        title
+                        content
+                    }
+                }
+            }
+        }
+        """,
+        variable_values={
+            "userId": user_id,
+        },
+    )
+
+
+async def get_user_note(*, id: int):
+    return await schema.execute(
+        """
+        query getUserNote($id: ID!) {
+            getUserNote(id: $id) {
+                __typename
+                ... on UserNoteNotExistsError {
+                    id
+                }
+                ... on UserNote {
+                    id
+                    title
+                    content
+                }
+            }
+        }
+        """,
+        variable_values={"id": id},
+    )
+
+
 async def user_note_create(*, user_id: int, title: str, content: str):
     return await schema.execute(
         """
-        mutation Create($userId: ID!, $title: String!, $content: String!) {
-            userNote {
-                create(userId: $userId, title: $title, content: $content) {
-                    __typename
-                    ... on UserNoteTitleAlreadyExistsError {
+        mutation userNoteCreate($userId: ID!, $title: String!, $content: String!) {
+            user {
+                note {
+                    create(userId: $userId, title: $title, content: $content) {
+                        __typename
+                        ... on UserNoteTitleAlreadyExistsError {
                             alternativeTitle
                         }
-                    ... on UserNoteCreated {
-                        note {
-                            id
-                            title
-                            content
+                        ... on UserNoteCreated {
+                            note {
+                                id
+                                title
+                                content
+                            }
                         }
                     }
                 }
@@ -133,69 +179,21 @@ async def user_note_create(*, user_id: int, title: str, content: str):
     )
 
 
-async def user_note_getall(*, user_id: int):
-    return await schema.execute(
-        """
-        query GetAll($userId: ID!) {
-            userNote {
-                getAll(userId: $userId) {
-                    __typename
-                    ... on UserNotExistsError {
-                        id
-                    }
-                    ... on UserNotes {
-                        notes {
-                            id
-                            title
-                            content
-                        }
-                    }
-                }
-            }
-        }
-        """,
-        variable_values={
-            "userId": user_id,
-        },
-    )
-
-
-async def user_note_getone(*, id: int):
-    return await schema.execute(
-        """
-        query GetOne($id: ID!) {
-            userNote {
-                getOne(id: $id) {
-                    __typename
-                    ... on UserNoteNotExistsError {
-                            id
-                        }
-                    ... on UserNote {
-                            id
-                            title
-                            content
-                        }
-                }
-            }
-        }
-        """,
-        variable_values={"id": id},
-    )
-
-
 async def user_note_delete(*, id: int):
     return await schema.execute(
         """
-        mutation Delete($id: ID!) {
-            userNote {
-                delete(id: $id) {
-                    __typename
-                    ... on UserNoteNotExistsError {
+        mutation userNoteDelete($id: ID!) {
+            user {
+                note {
+                    delete(id: $id) {
+                        __typename
+                        ... on UserNoteNotExistsError {
                             id
                         }
-                    ... on UserNoteDeleted {
+                        ... on UserNoteDeleted {
                             id
                         }
+                    }
                 }
             }
         }
@@ -223,7 +221,7 @@ def _db_note_id(title: str):
     )
 
 
-skip_db_not_test = pytest.mark.skipif(
+skip_db_not_test = pytest.mark.xfail(
     not db.db_name.endswith("-test"),
     reason=f"'{db.db_name}' is not a test database",
 )
@@ -277,7 +275,7 @@ def test_user_note_create(async_wait):
     data = async_wait(
         user_note_create(user_id=user_id, title="TestNote", content="TestContent")
     ).data
-    assert _v(data, "userNote.create.__typename") == "UserNoteCreated"
+    assert _v(data, "user.note.create.__typename") == "UserNoteCreated"
 
 
 @skip_db_not_test
@@ -293,38 +291,38 @@ def test_user_note_create_error_already_exist(async_wait):
     data = async_wait(
         user_note_create(user_id=user_id, title="TestNote", content="TestContent")
     ).data
-    assert _v(data, "userNote.create.__typename") == "UserNoteTitleAlreadyExistsError"
+    assert _v(data, "user.note.create.__typename") == "UserNoteTitleAlreadyExistsError"
 
 
 @skip_db_not_test
-def test_user_getall(async_wait):
+def test_get_users(async_wait):
     user_id = _db_user_id("TestUser")
     if not user_id:  # pragma: no cover
         pytest.skip()
 
-    data = async_wait(user_getall()).data
-    assert _v(data, "user.getAll.users") != []
+    data = async_wait(get_users()).data
+    assert _v(data, "getUsers.users") != []
 
 
 @skip_db_not_test
-def test_user_getone(async_wait):
+def test_get_user(async_wait):
     user_id = _db_user_id("TestUser")
     if not user_id:  # pragma: no cover
         pytest.skip()
 
-    data = async_wait(user_getone(id=user_id)).data
-    assert _v(data, "user.getOne.__typename") == "User"
+    data = async_wait(get_user(id=user_id)).data
+    assert _v(data, "getUser.__typename") == "User"
 
 
 @skip_db_not_test
-def test_user_getone_error_not_exists(async_wait):
-    data = async_wait(user_getone(id=-1)).data
+def test_get_user_error_not_exists(async_wait):
+    data = async_wait(get_user(id=-1)).data
     assert data is not None
-    assert _v(data, "user.getOne.__typename") == "UserNotExistsError"
+    assert _v(data, "getUser.__typename") == "UserNotExistsError"
 
 
 @skip_db_not_test
-def test_user_note_getall(async_wait):
+def test_get_user_notes(async_wait):
     user_id = _db_user_id("TestUser")
     if not user_id:  # pragma: no cover
         pytest.skip()
@@ -333,31 +331,31 @@ def test_user_note_getall(async_wait):
     if not note_id:  # pragma: no cover
         pytest.skip()
 
-    data = async_wait(user_note_getall(user_id=user_id)).data
-    assert _v(data, "userNote.getAll.notes") != []
+    data = async_wait(get_user_notes(user_id=user_id)).data
+    assert _v(data, "getUserNotes.notes") != []
 
 
 @skip_db_not_test
-def test_user_note_getall_error_not_exists(async_wait):
-    data = async_wait(user_note_getall(user_id=-1)).data
-    assert _v(data, "userNote.getAll.__typename") == "UserNotExistsError"
+def test_get_user_notes_error_not_exists(async_wait):
+    data = async_wait(get_user_notes(user_id=-1)).data
+    assert _v(data, "getUserNotes.__typename") == "UserNotExistsError"
 
 
 @skip_db_not_test
-def test_user_note_getone(async_wait):
+def test_get_user_note(async_wait):
     note_id = _db_note_id("TestNote")
     if not note_id:  # pragma: no cover
         pytest.skip()
 
-    data = async_wait(user_note_getone(id=note_id)).data
-    assert _v(data, "userNote.getOne.__typename") == "UserNote"
+    data = async_wait(get_user_note(id=note_id)).data
+    assert _v(data, "getUserNote.__typename") == "UserNote"
 
 
 @skip_db_not_test
-def test_user_note_getone_error_note_not_exists(async_wait):
-    data = async_wait(user_note_getone(id=-1)).data
+def test_test_user_note_error_note_not_exists(async_wait):
+    data = async_wait(get_user_note(id=-1)).data
     assert data is not None
-    assert _v(data, "userNote.getOne.__typename") == "UserNoteNotExistsError"
+    assert _v(data, "getUserNote.__typename") == "UserNoteNotExistsError"
 
 
 @skip_db_not_test
@@ -367,13 +365,13 @@ def test_user_note_delete(async_wait):
         pytest.skip()
 
     data = async_wait(user_note_delete(id=note_id)).data
-    assert _v(data, "userNote.delete.__typename") == "UserNoteDeleted"
+    assert _v(data, "user.note.delete.__typename") == "UserNoteDeleted"
 
 
 @skip_db_not_test
 def test_user_note_delete_error_not_exists(async_wait):
     data = async_wait(user_note_delete(id=-1)).data
-    assert _v(data, "userNote.delete.__typename") == "UserNoteNotExistsError"
+    assert _v(data, "user.note.delete.__typename") == "UserNoteNotExistsError"
 
 
 @skip_db_not_test

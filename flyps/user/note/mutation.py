@@ -5,6 +5,7 @@ from loguru import logger
 from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
 from sqlalchemy.sql import and_, func
 from strawberry import ID
+from strawberry.types import Info
 
 from flyps import db
 from flyps.error import InternalError
@@ -54,7 +55,9 @@ UserNoteDeleteResponse = Annotated[
 @strawberry.type
 class UserNoteMutation:
     @strawberry.mutation
-    def create(self, user_id: ID, title: str, content: str) -> UserNoteCreateResponse:
+    def create(
+        self, info: Info, user_id: ID, title: str, content: str
+    ) -> UserNoteCreateResponse:
         note = UserNoteTable(
             user_id=user_id,
             title=title,
@@ -82,7 +85,7 @@ class UserNoteMutation:
         )
 
     @strawberry.mutation
-    def delete(self, id: ID) -> UserNoteDeleteResponse:
+    def delete(self, info: Info, id: ID) -> UserNoteDeleteResponse:
         q = db.session.query(UserNoteTable)
         q = q.where(UserNoteTable.id == id)
 

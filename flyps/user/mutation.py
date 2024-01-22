@@ -4,11 +4,13 @@ import strawberry
 from loguru import logger
 from sqlalchemy.exc import IntegrityError, NoResultFound, SQLAlchemyError
 from sqlalchemy.sql import func
-from strawberry import ID
+from strawberry import ID, field
+from strawberry.types import Info
 
 from flyps import db
 from flyps.error import InternalError
 from flyps.model import UserTable
+from flyps.user.note.mutation import UserNoteMutation
 from flyps.user.types import User, UserNotExistsError
 
 
@@ -51,8 +53,10 @@ UserDeleteResponse = Annotated[
 
 @strawberry.type
 class UserMutation:
+    note: UserNoteMutation = field(resolver=UserNoteMutation)
+
     @strawberry.mutation
-    def create(self, name: str) -> UserCreateResponse:
+    def create(self, info: Info, name: str) -> UserCreateResponse:
         user = UserTable(
             name=name,
         )
@@ -77,7 +81,7 @@ class UserMutation:
         )
 
     @strawberry.mutation
-    def delete(self, id: ID) -> UserDeleteResponse:
+    def delete(self, info: Info, id: ID) -> UserDeleteResponse:
         q = db.session.query(UserTable)
         q = q.where(UserTable.id == id)
 
